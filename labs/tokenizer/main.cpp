@@ -12,7 +12,7 @@ void tokenize_text(const fs::path& input, const fs::path& output)
 	std::fstream output_file(output.string(), std::ios::out);
 
 	std::string curr_str;
-	const std::regex re(R"([\s|,|.|;|-]+)");
+	const std::regex re(R"([\s|,|.|;|:]+)");
 
 	while (input_file >> curr_str)
 	{
@@ -26,7 +26,7 @@ void tokenize_text(const fs::path& input, const fs::path& output)
 
 		for (auto& token : tokenized)
 		{
-			output_file << token << " ";
+			output_file << token;
 		}
 		output_file << std::endl;
 	}
@@ -48,27 +48,26 @@ int main()
 	if (!fs::exists(parsed_data))
 	{
 		std::cerr << "No folder with parsed data..." << std::endl;
+		return -1;
 	}
 
 	fs::path tokenized_data_folder = LR"(C:\Users\Alexey\Desktop\IS\2020-03-13\tokenized_data)";
-	if (fs::exists(tokenized_data_folder))
+	if (!fs::exists(tokenized_data_folder))
 	{
 		fs::remove_all(tokenized_data_folder);
+		fs::create_directory(tokenized_data_folder);
 	}
-
-	fs::create_directory(tokenized_data_folder);
-
-
-	fs::path tokenized_data = LR"(C:\Users\Alexey\Desktop\IS\2020-03-13\tokenized_data\biorxiv_medrxiv)";
-	if (fs::exists(tokenized_data))
+	
+	fs::path tokenized_data_output = LR"(C:\Users\Alexey\Desktop\IS\2020-03-13\tokenized_data\biorxiv_medrxiv)";
+	if (fs::exists(tokenized_data_output))
 	{
-		fs::remove_all(tokenized_data);
+		fs::remove_all(tokenized_data_output);
 	}
 
-	fs::create_directory(tokenized_data);
+	fs::create_directory(tokenized_data_output);
 
 
-	make_tokenization(parsed_data, tokenized_data);
+	make_tokenization(parsed_data, tokenized_data_output);
 
 	return 0;
 }
