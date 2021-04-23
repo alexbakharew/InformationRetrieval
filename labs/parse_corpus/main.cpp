@@ -4,9 +4,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <string>
-#include <set>
 #include <exception>
 #include <iostream>
+
+#include <common.h>
 
 namespace pt = boost::property_tree;
 namespace fs = boost::filesystem;
@@ -30,14 +31,14 @@ void extract_text(const fs::path& input_file_path, const fs::path& output_file_p
 		boost::property_tree::read_json(input_file_path.string(), pt);
 
 		auto title = pt.get_child("metadata.title"); // Title of the article
-		output_file << title.data() << std::endl;
+		output_file << title.data() << "\n";
 
 		// Todo: It is possible to be no Abstract section
 		output_file << "Abstract" << std::endl;
 		BOOST_FOREACH(boost::property_tree::ptree::value_type & v, pt.get_child("abstract"))
 		{
 			assert(v.first.empty()); // array elements have no names
-			output_file << v.second.get_child("text").data() << std::endl;
+			output_file << v.second.get_child("text").data() << "\n";
 		}
 
 		// Todo: Add sections from text
@@ -45,7 +46,7 @@ void extract_text(const fs::path& input_file_path, const fs::path& output_file_p
 		BOOST_FOREACH(boost::property_tree::ptree::value_type & v, pt.get_child("body_text"))
 		{
 			assert(v.first.empty()); // array elements have no names
-			output_file << v.second.get_child("text").data() << std::endl;
+			output_file << v.second.get_child("text").data() << "\n";
 		}
 	}
 	catch (const std::exception& e)
@@ -56,28 +57,15 @@ void extract_text(const fs::path& input_file_path, const fs::path& output_file_p
 	return;
 }
 
-void parse_files_in_folder(const fs::path& source_path)
+void parse_files_in_folder(const fs::path& source_path, const fs::path& dest_path)
 {
-	if (!fs::is_directory(source_path))
+	if (!fs::is_directory(source_path) || !fs::is_directory(dest_path))
 	{
 		return;
 	}
 
-	fs::path parent_folder = source_path.parent_path();
-	std::string source_folder_name = source_path.filename().string();
-	fs::path folder_with_parsed_data = parent_folder / "parsed_data";
+	
 
-	if (!fs::exists(folder_with_parsed_data))
-	{
-		fs::create_directory(folder_with_parsed_data);
-	}
-
-	fs::path dest_path = folder_with_parsed_data / source_folder_name;
-	if (fs::exists(dest_path))
-	{
-		fs::remove_all(dest_path);
-	}
-	fs::create_directory(dest_path);
 
 	for (auto& entry : boost::make_iterator_range(fs::directory_iterator(source_path), {}))
 	{
@@ -90,11 +78,15 @@ void parse_files_in_folder(const fs::path& source_path)
 
 int main()
 {
-	fs::path input_folder = LR"(C:\Users\Alexey\Desktop\IS\2020-03-13)";
+	fs::path work_folder = LR"(C:\Users\Alexey\Desktop\IS\2020-03-13)";
+	fs::path raw_data_folder_path = work_folder / raw_data_folder;
+	fs::path parsed_data_folder_path = work_folder / parsed_data_folder;
 
 	std::vector<fs::path> folders_to_process;
 
-	for (auto& entry : boost::make_iterator_range(fs::directory_iterator(input_folder), {}))
+	// In our first step, all unparsed text is stored in multiple folders
+	// In the end, we'll have one-level folder "parsed_data" with parsed text
+	for (auto& entry : boost::make_iterator_range(fs::directory_iterator(raw_data_folder_path), {}))
 	{
 		if (fs::is_directory(entry))
 		{
@@ -102,8 +94,23 @@ int main()
 		}
 	}
 
+	try
+	{
+		if (fs::exists(parsed_data_folder_path))
+		{
+			fs::remove_all(parsed_data_folder_path);
+		}
+
+		fs::create_directory(parsed_data_folder_path);
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << e.what() << std::endl;
+		exit(-1);
+	}
+
 	for(auto& path : folders_to_process)
-		parse_files_in_folder(path);
+		parse_files_in_folder(path, parsed_data_folder_path);
 
 	return 0;
 }
