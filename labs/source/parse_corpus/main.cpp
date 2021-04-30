@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include <common.h>
+#include <utils.hpp>
 
 namespace pt = boost::property_tree;
 namespace fs = boost::filesystem;
@@ -64,9 +65,6 @@ void parse_files_in_folder(const fs::path& source_path, const fs::path& dest_pat
 		return;
 	}
 
-	
-
-
 	for (auto& entry : boost::make_iterator_range(fs::directory_iterator(source_path), {}))
 	{
 		std::string filename = entry.path().stem().string();
@@ -94,20 +92,7 @@ int main()
 		}
 	}
 
-	try
-	{
-		if (fs::exists(parsed_data_folder_path))
-		{
-			fs::remove_all(parsed_data_folder_path);
-		}
-
-		fs::create_directory(parsed_data_folder_path);
-	}
-	catch (const std::exception& e)
-	{
-		std::cout << e.what() << std::endl;
-		exit(-1);
-	}
+	recreate_dir_safely(parsed_data_folder_path);
 
 	for(auto& path : folders_to_process)
 		parse_files_in_folder(path, parsed_data_folder_path);

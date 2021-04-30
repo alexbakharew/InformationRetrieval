@@ -3,18 +3,13 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <fstream>
-#include <string>
 #include <algorithm>
 
+#include <utils.hpp>
 #include <common.h>
 #include "stop_words.h"
 
 namespace fs = boost::filesystem;
-
-bool is_digit(const std::string& str)
-{
-	return std::all_of(str.begin(), str.end(), ::isdigit);
-}
 
 bool is_token_correct(const std::string& low_str)
 {
@@ -62,10 +57,11 @@ void tokenize_text(const fs::path& input, const fs::path& output)
 
 void make_tokenization(const fs::path& source, const fs::path& destination)
 {
+	unsigned long long filename_count = 0;
 	for (auto& file : boost::make_iterator_range(fs::directory_iterator(source), {}))
 	{
-		std::string filename = file.path().stem().string();
-		tokenize_text(file, destination / (filename + ".txt"));
+		tokenize_text(file, destination / (std::to_string(filename_count) + ".txt"));
+		++filename_count;
 	}
 
 	return;
@@ -77,20 +73,7 @@ int main()
 	fs::path parsed_data_folder_path = work_folder / parsed_data_folder;
 	fs::path tokenized_folder_path = work_folder / tokenized_data_folder;
 
-	try
-	{
-		if (fs::exists(tokenized_folder_path))
-		{
-			fs::remove_all(tokenized_folder_path);
-		}
-
-		fs::create_directory(tokenized_folder_path);
-	}
-	catch (const std::exception& e)
-	{
-		std::cout << e.what() << std::endl;
-		exit(-1);
-	}
+	recreate_dir_safely(tokenized_folder_path);
 
 	make_tokenization(parsed_data_folder_path, tokenized_folder_path);
 
