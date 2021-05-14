@@ -11,47 +11,11 @@
 #include <utility>
 
 #include <utils.hpp>
+#include "engine.h"
 
-namespace fs = boost::filesystem;
-using ull = unsigned long long;
-
-constexpr ull FilesInIndex = 100;
-
-struct dictionary
+int SearchEngine::save_index_to_file(const fs::path& path_to_idx, const dictionary& dict)
 {
-	std::unordered_map<std::string, std::vector<ull>> umap;
-
-	auto find(const std::string& s)
-	{
-		return umap.find(s);
-	}
-
-	auto insert(const std::pair<std::string, std::vector<ull>>& val)
-	{
-		return umap.insert(val);
-	}
-
-	auto end()
-	{
-		return umap.end();
-	}
-
-	auto clear()
-	{
-		return umap.clear();
-	}
-
-	template <typename Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
-		ar & umap;
-	}
-
-};
-
-int save_index_to_file(const fs::path& path_to_file, const dictionary& dict)
-{
-	std::ofstream f(path_to_file.c_str(), std::ios::binary);
+	std::ofstream f(path_to_idx.c_str(), std::ios::binary);
 	if (f.fail()) 
 		return -1;
 	boost::archive::binary_oarchive oa(f);
@@ -59,19 +23,19 @@ int save_index_to_file(const fs::path& path_to_file, const dictionary& dict)
 	return 0;
 }
 
-int load_index_from_file(const std::string& filename, dictionary& dict)
+int SearchEngine::load_index_from_file(const std::string& path_to_idx, dictionary& dict)
 {
-	return 1;
+	std::ifstream f(path_to_idx.c_str(), std::ios::binary);
+	if (f.fail())
+		return -1;
+	boost::archive::binary_iarchive ia(f);
+	ia >> dict;
+	return 0;
 }
 
-int main()
+void SearchEngine::build_index(const fs::path& work_folder)
 {
-	fs::path work_folder = LR"(C:\Users\Alexey\Desktop\IS\2020-03-13)";
-
-	fs::path tokenized_data_folder_path = work_folder / tokenized_data_folder;
-	fs::path indexed_data_folder_path = work_folder / indexed_data_folder;
-
-	recreate_dir_safely(indexed_data_folder_path);
+	utils::recreate_dir_safely(indexed_data_folder_path);
 
 	dictionary dict;
 	ull doc_count = 0;
@@ -94,7 +58,7 @@ int main()
 				}
 				else
 				{
-					if(it->second.back() != filename_int)
+					if (it->second.back() != filename_int)
 						it->second.push_back(filename_int);
 				}
 			}
@@ -111,6 +75,44 @@ int main()
 			doc_count = 0;
 		}
 	}
+}
+
+std::vector<int> SearchEngine::search(const std::vector<std::string> terms)
+{
+	std::vector<std::vector<int>> search_result(terms.size());
+
+	dictionary dict;
+	for (auto& index_path : boost::make_iterator_range(fs::directory_iterator(indexed_data_folder_path), {}))
+	{
+		load_index_from_file(index_path.path().string(), dict);
+		for (int i = 0; i < terms.size(); ++i)
+		{
+			auto it = dict.find(terms[i]);
+			if (it != dict.end())
+			{
+				//search_result[i].reserve(search_result[i].size() + it->second.size());
+				search_result[i].insert(search_result[i].end(), it->second.begin(), it->second.end());
+			}
+		}
+	}
+	
+	return search_result[0];
+}
+
+int main()
+{
+	SearchEngine se;
+
+	std::vector<std::string> terms = { "pharmacy" };
+
+	auto res = se.search(terms);
+	std::sort(res.begin(), res.end());
+
+	for (auto& i : res)
+	{
+		std::cout << i << " ";
+	}
+	std::cout << std::endl;
 
 	return 0;
 }

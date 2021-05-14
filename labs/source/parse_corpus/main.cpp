@@ -6,7 +6,7 @@
 #include <string>
 #include <exception>
 #include <iostream>
-
+#include <unordered_set>
 #include <common.h>
 #include <utils.hpp>
 
@@ -30,23 +30,34 @@ void extract_text(const fs::path& input_file_path, const fs::path& output_file_p
 	{
 		boost::property_tree::ptree pt;
 		boost::property_tree::read_json(input_file_path.string(), pt);
+		std::unordered_set<std::string> sections;
 
 		auto title = pt.get_child("metadata.title"); // Title of the article
 		output_file << title.data() << "\n";
 
-		// Todo: It is possible to be no Abstract section
-		output_file << "Abstract" << std::endl;
+		bool is_abstract_printed = false;
 		BOOST_FOREACH(boost::property_tree::ptree::value_type & v, pt.get_child("abstract"))
 		{
+			if (!is_abstract_printed)
+			{
+				output_file << "Abstract\n";
+				is_abstract_printed = true;
+			}
 			assert(v.first.empty()); // array elements have no names
 			output_file << v.second.get_child("text").data() << "\n";
 		}
 
-		// Todo: Add sections from text
-		output_file << "Text" << std::endl;
 		BOOST_FOREACH(boost::property_tree::ptree::value_type & v, pt.get_child("body_text"))
 		{
 			assert(v.first.empty()); // array elements have no names
+
+			std::string curr_section = v.second.get_child("section").data();
+			if (sections.find(curr_section) == sections.end()) // do not duplicate sections name in parsed data
+			{
+				output_file << curr_section << "\n";
+				sections.insert(curr_section);
+			}
+
 			output_file << v.second.get_child("text").data() << "\n";
 		}
 	}
@@ -83,7 +94,7 @@ int main()
 	std::vector<fs::path> folders_to_process;
 
 	// In our first step, all unparsed text is stored in multiple folders
-	// In the end, we'll have one-level folder "parsed_data" with parsed text
+	// In the end, we'll have one-level folder "parsed_data" with parsed documents
 	for (auto& entry : boost::make_iterator_range(fs::directory_iterator(raw_data_folder_path), {}))
 	{
 		if (fs::is_directory(entry))
@@ -92,7 +103,7 @@ int main()
 		}
 	}
 
-	recreate_dir_safely(parsed_data_folder_path);
+	utils::recreate_dir_safely(parsed_data_folder_path);
 
 	for(auto& path : folders_to_process)
 		parse_files_in_folder(path, parsed_data_folder_path);
