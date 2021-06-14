@@ -1,2 +1,7 @@
 urls
 unicode codes inside text
+
+TODO:
+1) Vectors intersection
+2) &&, ||, !
+3) Detect language and apply corresponded stop-words list

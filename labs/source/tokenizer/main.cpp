@@ -29,7 +29,7 @@ void tokenize_text(const fs::path& input, const fs::path& output)
 	// for read-write speed-up: https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
 
 	std::string curr_str;
-	const std::regex re(R"([\s|,|.|;|:|(|)|<|>|=|+|\/|[|\]|'|%|-|°|*|?|!|@|\"]+)");
+	const std::regex re(R"([\s|,|.|;|:|(|)|<|>|=|+|\/|\[|\]|\'|\%|\-|\°|\*|\?|\!|\@|\"]+)");
 	
 	while (std::getline(input_file, curr_str))
 	{

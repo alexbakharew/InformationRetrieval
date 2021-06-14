@@ -51,4 +51,4 @@ long GetFileSize(std::string filename)
 	return rc == 0 ? stat_buf.st_size : -1;
 }
 
-} //utils
+} // utils

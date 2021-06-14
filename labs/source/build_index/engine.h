@@ -15,7 +15,7 @@
 namespace fs = boost::filesystem;
 using ull = unsigned long long;
 
-constexpr ull FilesInIndex = 100;
+constexpr ull FilesInIndex = 1000;
 
 struct dictionary
 {
@@ -26,7 +26,7 @@ struct dictionary
 		return umap.find(s);
 	}
 
-	auto insert(const std::pair<std::string, std::vector<ull>>& val)
+	auto insert(const std::pair<std::string, std::vector<ull>>&& val)
 	{
 		return umap.insert(val);
 	}

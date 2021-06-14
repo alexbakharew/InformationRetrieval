@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <common.h>
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 #include <utility>
+#include <tuple>
 
 #include <utils.hpp>
 #include "engine.h"
@@ -54,7 +55,7 @@ void SearchEngine::build_index(const fs::path& work_folder)
 				auto it = dict.find(term);
 				if (it == dict.end())
 				{
-					dict.insert(std::make_pair(term, std::vector<ull>{filename_int}));
+					dict.insert(std::move(std::make_pair(term, std::vector<ull>{filename_int})));
 				}
 				else
 				{
@@ -101,18 +102,26 @@ std::vector<int> SearchEngine::search(const std::vector<std::string> terms)
 
 int main()
 {
+	bool is_build = false;
 	SearchEngine se;
 
-	std::vector<std::string> terms = { "pharmacy" };
-
-	auto res = se.search(terms);
-	std::sort(res.begin(), res.end());
-
-	for (auto& i : res)
+	if (is_build)
 	{
-		std::cout << i << " ";
+		se.build_index(indexed_data_folder);
 	}
-	std::cout << std::endl;
+	else // search
+	{
+		std::vector<std::string> terms = { "вирус" };
+
+		auto res = se.search(terms);
+		std::sort(res.begin(), res.end());
+
+		for (auto& i : res)
+		{
+			std::cout << i << " ";
+		}
+		std::cout << std::endl;
+	}
 
 	return 0;
 }
