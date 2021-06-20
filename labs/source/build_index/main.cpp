@@ -60,7 +60,7 @@ void SearchEngine::build_index(const fs::path& work_folder)
 				else
 				{
 					if (it->second.back() != filename_int)
-						it->second.push_back(filename_int);
+						it->second.emplace_back(filename_int);
 				}
 			}
 
@@ -91,13 +91,27 @@ std::vector<int> SearchEngine::search(const std::vector<std::string> terms)
 			auto it = dict.find(terms[i]);
 			if (it != dict.end())
 			{
-				//search_result[i].reserve(search_result[i].size() + it->second.size());
 				search_result[i].insert(search_result[i].end(), it->second.begin(), it->second.end());
 			}
 		}
 	}
+
+	for (auto& arr : search_result)
+	{
+		std::sort(arr.begin(), arr.end());
+	}
+
 	
-	return search_result[0];
+	std::vector<int> res;
+
+	for (int i = 0; i < search_result.size() - 1; ++i)
+	{
+		std::set_intersection(search_result[i].begin(), search_result[i].end(), 
+							  search_result[i + 1].begin(), search_result[i + 1].end(),
+							  std::back_inserter(res));
+	}
+
+	return res;
 }
 
 int main()
@@ -111,7 +125,7 @@ int main()
 	}
 	else // search
 	{
-		std::vector<std::string> terms = { "вирус" };
+		std::vector<std::string> terms = { "pharmacy", "period" };
 
 		auto res = se.search(terms);
 		std::sort(res.begin(), res.end());
@@ -121,6 +135,8 @@ int main()
 			std::cout << i << " ";
 		}
 		std::cout << std::endl;
+
+		std::cout << "TOTAL: " << res.size();
 	}
 
 	return 0;

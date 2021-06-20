@@ -8,6 +8,9 @@
 #include <utils.hpp>
 #include <common.h>
 #include "stop_words.h"
+#include <vector>
+
+std::map<std::string, uint64_t> frequency;
 
 namespace fs = boost::filesystem;
 
@@ -48,6 +51,17 @@ void tokenize_text(const fs::path& input, const fs::path& output)
 			if (is_token_correct(token))
 			{
 				output_file << token << "\n";
+
+				auto it = frequency.find(token);
+
+				if (it != frequency.end())
+				{
+					++it->second;
+				}
+				else
+				{
+					frequency[token] = 1;
+				}
 			}
 		}
 	}
@@ -76,6 +90,12 @@ int main()
 	utils::recreate_dir_safely(tokenized_folder_path);
 
 	make_tokenization(parsed_data_folder_path, tokenized_folder_path);
+
+	std::ofstream freq_file((work_folder / "frequency.txt").string());
+	for (const auto& curr : frequency)
+	{
+		freq_file << curr.first << " " << curr.second << "\n";
+	}
 
 	return 0;
 }
